@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ASTO Road Condition Monitoring</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            margin-right: 6px;
+        }
+
+        select,
+        input,
+        button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            margin: 6px 4px;
+            background-color: #1f1f1f;
+            color: #ffffff;
+            font-family: inherit;
+        }
+
+        input,
+        select {
+            width: fit-content;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .table-container {
+            margin-top: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        thead {
+            background-color: #1f1f1f;
+            position: sticky;
+            top: 0;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #1a1a1a;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #151515;
+        }
+
+        th {
+            border-bottom: 1px solid #333;
+        }
+
+        td {
+            border-bottom: 1px solid #222;
+        }
+
+        .chart-container {
+            margin-top: 35px;
+            overflow-x: auto;
+        }
+
+        #myChart {
+            height: 300px !important;
+            min-width: 800px;
+        }
+
+        #chartNavigation {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #chartPageInfo {
+            color: #ccc;
+        }
+
+        ::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        .icon {
+            font-size: 22px;
+            color: #3b82f6;
+        }
+
+        /* Footer Style */
+        footer {
+
+            padding: 5px 0;
+            color: white;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-radius: 6px;
+        }
+
+        footer p {
+            font-size: 9px;
+        }
+
+        .header-advanced {
+            position: relative;
+            background: url('https://images.unsplash.com/photo-1628487749130-2d41acb1802a?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center/cover;
+            color: white;
+            padding: 50px 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+        }
+
+        .header-advanced .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 32, 39, 0.85);
+            /* gelap tapi transparan */
+            z-index: 1;
+        }
+
+        .header-inner {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: flex-start;
+        }
+
+        .logo-svg svg {
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 5px #00ffff);
+            }
+
+            50% {
+                filter: drop-shadow(0 0 15px #00ffff);
+            }
+        }
+
+        .title h1 {
+            font-size: 40px;
+            margin: 0;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        .title p {
+            margin: 5px 0 0;
+            font-size: 16px;
+            color: #cccccc;
+            letter-spacing: 1px;
+        }
+
+        /* Animasi untuk Loading Indicator */
+        @keyframes pulse {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes scan {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+
+            50% {
+                width: 100%;
+            }
+
+            100% {
+                width: 0%;
+                margin-left: 100%;
+            }
+        }
+
+        /* Style untuk loading indicator */
+        #loadingIndicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 32, 39, 0.9);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header-advanced">
+        <div class="overlay"></div>
+        <div class="header-inner">
+            <div class="logo-svg">
+                <!-- Logo SVG bergaya teknologi -->
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="45" stroke="#00FFFF" stroke-width="5" />
+                    <path d="M50 20 L65 50 L50 80 L35 50 Z" fill="#00FFFF" />
+                </svg>
+            </div>
+            <div class="title">
+                <h1>PLANT-ASTO</h1>
+                <p>Road Condition Monitoring System</p>
+            </div>
+        </div>
+    </header>
+
+
+    <h2><i class="fas fa-road icon"></i> PILIH DATA </h2>
+
+    <label for="headingSelect"><i class="fas fa-location-arrow"></i> Heading:</label>
+    <select id="headingSelect">
+        <option value="">-- Semua --</option>
+        <option value="muatan">Muatan</option>
+        <option value="kosongan">Kosongan</option>
+    </select>
+
+    <label for="kmStart"><i class="fas fa-route"></i> Dari KM:</label>
+    <input type="number" id="kmStart" min="0" value="2" />
+
+    <label for="kmEnd">Sampai KM:</label>
+    <input type="number" id="kmEnd" min="0" value="7" />
+
+    <br />
+
+    <label for="startTime"><i class="fas fa-clock"></i> Waktu Mulai:</label>
+    <input type="datetime-local" id="startTime" />
+
+    <label for="endTime">Waktu Akhir:</label>
+    <input type="datetime-local" id="endTime" />
+
+    <br />
+
+    <button onclick="loadFilteredData()"><i class="fas fa-filter"></i> Tampilkan</button>
+    <button onclick="exportToCSV()"><i class="fas fa-download"></i> Export ke CSV</button>
+
+    <div class="table-container">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Waktu</th>
+                    <th>KM</th>
+                    <th>Heading</th>
+                    <th>Kecepatan</th>
+                    <th>Getaran</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+        <div id="chartNavigation">
+            <button onclick="prevChartPage()"><i class="fas fa-arrow-left"></i> Sebelumnya</button>
+            <span id="chartPageInfo">Batch 1</span>
+            <button onclick="nextChartPage()">Berikutnya <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+    <iframe
+        src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d151419.96168425004!2d114.55046602748159!3d-1.0797568179362869!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1sid!2sid!4v1746187282992!5m2!1sid!2sid"
+        width="1800" height="1000" style="border:0;" allowfullscreen="" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+    <!-- Loading Indicator (Opsi 3: Radar Animation) - TAMBAHKAN INI SEBELUM FOOTER -->
+    <div id="loadingIndicator">
+        <div class="radar"
+            style="width: 150px; height: 150px; border-radius: 50%; border: 2px solid #00FFFF; position: relative; overflow: hidden;">
+            <div class="pulse"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; border: 5px solid #00FFFF; transform: scale(0); opacity: 0; animation: pulse 2s infinite;">
+            </div>
+            <div class="scan-line"
+                style="position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: linear-gradient(to bottom, transparent, #00FFFF, transparent); transform-origin: top; animation: scan 2s linear infinite;">
+            </div>
+            <div
+                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00FFFF; font-family: 'Poppins'; font-size: 12px; text-align: center;">
+                LOADING DULU<br>--SABAR--
+            </div>
+        </div>
+        <div class="progress"
+            style="width: 200px; height: 4px; background: #333; margin-top: 30px; border-radius: 2px; overflow: hidden;">
+            <div class="progress-bar"
+                style="height: 100%; width: 0%; background: #00FFFF; animation: progress 2s infinite;"></div>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2025 ASTO. All rights reserved. | Developed by Plant People development</p>
+    </footer>
+
+    <script>
+        const SUPABASE_URL = 'https://xzcuxmatigohkreivmpa.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Y3V4bWF0aWdvaGtyZWl2bXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMDQ2OTIsImV4cCI6MjA2MTY4MDY5Mn0.q3uUOkb6646WXkSBmbufHsQiCgPIwiFdEOixLBn_yyA';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+        // Fungsi untuk menampilkan loading
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'flex';
+        }
+
+        // Fungsi untuk menyembunyikan loading
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        // Pastikan loading hidden saat halaman pertama kali dimuat
+        document.addEventListener('DOMContentLoaded', function () {
+            hideLoading();
+        });
+
+        let chart;
+        async function loadFilteredData() {
+            showLoading();
+            try {
+                const heading = document.getElementById('headingSelect').value;
+                const kmStart = parseInt(document.getElementById('kmStart').value);
+                const kmEnd = parseInt(document.getElementById('kmEnd').value);
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+
+                const startTimestamp = startTime ? new Date(startTime).getTime() : null;
+                const endTimestamp = endTime ? new Date(endTime).getTime() : null;
+
+                let query = supabase
+                    .from('tracking_data')
+                    .select('*')
+                    .ilike('km_label', 'KM %');
+
+                if (heading) {
+                    query = query.eq('heading', heading);
+                }
+
+                const { data, error } = await query;
+
+                const tbody = document.querySelector('#resultTable tbody');
+                tbody.innerHTML = '';
+
+                if (error) {
+                    console.error('Gagal ambil data:', error);
+                    tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
+                    return;
+                }
+
+                const filtered = data.filter(row => {
+                    const km = parseInt(row.km_label.replace('KM ', ''));
+                    const time = new Date(row.timestamp).getTime();
+                    const kmMatch = km >= kmStart && km <= kmEnd;
+                    const timeMatch = (!startTimestamp || time >= startTimestamp) &&
+                        (!endTimestamp || time <= endTimestamp);
+                    return kmMatch && timeMatch;
+                });
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">Data tidak ditemukan.</td></tr>';
+                    updateChart([], [], []);
+                    return;
+                }
+
+                const labels = [];
+                const speeds = [];
+                const vibrations = [];
+
+                filtered.forEach(row => {
+                    const timeStr = new Date(row.timestamp).toLocaleString();
+                    const vibration = parseFloat(row.vibration_data);
+                    const vibrationColor = !isNaN(vibration) && vibration >= 40 ? 'red' : 'limegreen';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${timeStr}</td>
+                        <td>${row.km_label}</td>
+                        <td>${row.heading}</td>
+                        <td>${row.speed}</td>
+                        <td><span style="color:${vibrationColor}; font-weight:bold;">●</span> ${vibration.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    labels.push(row.km_label + ' (' + timeStr + ')');
+                    speeds.push(row.speed);
+                    vibrations.push(vibration);
+                });
+
+                updateChart(labels, speeds, vibrations);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        let chartInstance = null;
+        let chartPage = 1;
+        const chartPageSize = 100;
+        let allChartLabels = [];
+        let allChartSpeeds = [];
+        let allChartVibrations = [];
+
+        function updateChartPagination() {
+            const totalPages = Math.ceil(allChartLabels.length / chartPageSize);
+            if (chartPage < 1) chartPage = 1;
+            if (chartPage > totalPages) chartPage = totalPages;
+
+            const start = (chartPage - 1) * chartPageSize;
+            const end = start + chartPageSize;
+
+            const labels = allChartLabels.slice(start, end);
+            const speeds = allChartSpeeds.slice(start, end);
+            const vibrations = allChartVibrations.slice(start, end);
+
+            drawChart(labels, speeds, vibrations);
+            document.getElementById('chartPageInfo').textContent = `Batch ${chartPage} dari ${totalPages}`;
+        }
+
+        function prevChartPage() {
+            chartPage--;
+            updateChartPagination();
+        }
+
+        function nextChartPage() {
+            chartPage++;
+            updateChartPagination();
+        }
+
+        function updateChart(labels, speeds, vibrations) {
+            allChartLabels = labels;
+            allChartSpeeds = speeds;
+            allChartVibrations = vibrations;
+            chartPage = 1;
+            updateChartPagination();
+        }
+
+        function drawChart(labels, speeds, vibrations) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Kecepatan',
+                            data: speeds,
+                            borderColor: 'blue',
+                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Getaran',
+                            data: vibrations,
+                            borderColor: 'red',
+                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                            yAxisID: 'y2',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y1: {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Kecepatan'
+                            },
+                            grid: {
+                                color: '#555' // warna abu-abu untuk grid y1
+                            }
+                        },
+                        y2: {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Getaran'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: '#555'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#555' // warna abu-abu untuk grid sumbu X
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+            // Pastikan lebarnya proporsional agar tidak terlalu rapat
+            document.getElementById('myChart').style.width = (labels.length * 60) + 'px';
+        }
+
+
+
+        function exportToCSV() {
+            const rows = [['Waktu', 'KM', 'Heading', 'Kecepatan', 'Getaran']];
+            const trs = document.querySelectorAll('#resultTable tbody tr');
+
+            trs.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                const row = Array.from(cells).map(cell => cell.textContent);
+                rows.push(row);
+            });
+
+            const csvContent = rows.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "data_tracking.csv");
+            link.click();
+        }
+    </script>
+</body>
+
+</html>
