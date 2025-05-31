@@ -491,7 +491,7 @@
                 let query = supabase
                     .from('tracking_data')
                     .select('*')
-                    // .ilike('km_label', 'KM %');
+                    .ilike('km_label', 'KM %');
 
                 if (heading) {
                     query = query.eq('heading', heading);
@@ -509,7 +509,7 @@
                 }
 
                 const filtered = data.filter(row => {
-                    const km = parseFloat(row.km_label);
+                    const km = parseInt(row.km_label.replace('KM ', ''));
                     const time = new Date(row.timestamp).getTime();
                     const kmMatch = km >= kmStart && km <= kmEnd;
                     const timeMatch = (!startTimestamp || time >= startTimestamp) &&
