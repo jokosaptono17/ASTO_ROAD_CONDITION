@@ -491,7 +491,7 @@
                 let query = supabase
                     .from('tracking_data')
                     .select('*')
-                    .ilike('km_label', 'KM %');
+                    // .ilike('km_label', 'KM %');
 
                 if (heading) {
                     query = query.eq('heading', heading);
