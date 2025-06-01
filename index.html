@@ -480,8 +480,10 @@
             showLoading();
             try {
                 const heading = document.getElementById('headingSelect').value;
-                const kmStart = parseInt(document.getElementById('kmStart').value);
-                const kmEnd = parseInt(document.getElementById('kmEnd').value);
+                // const kmStart = parseInt(document.getElementById('kmStart').value);
+                // const kmEnd = parseInt(document.getElementById('kmEnd').value);
+                const kmStart = parseFloat(document.getElementById('kmStart').value) || 0;
+                const kmEnd = parseFloat(document.getElementById('kmEnd').value) || 1000;
                 const startTime = document.getElementById('startTime').value;
                 const endTime = document.getElementById('endTime').value;
 
@@ -508,13 +510,24 @@
                     return;
                 }
 
+                // const filtered = data.filter(row => {
+                //     const km = parseInt(row.km_label.replace('KM ', ''));
+                //     const time = new Date(row.timestamp).getTime();
+                //     const kmMatch = km >= kmStart && km <= kmEnd;
+                //     const timeMatch = (!startTimestamp || time >= startTimestamp) &&
+                //         (!endTimestamp || time <= endTimestamp);
+                //     return kmMatch && timeMatch;
                 const filtered = data.filter(row => {
-                    const km = parseInt(row.km_label.replace('KM ', ''));
-                    const time = new Date(row.timestamp).getTime();
-                    const kmMatch = km >= kmStart && km <= kmEnd;
-                    const timeMatch = (!startTimestamp || time >= startTimestamp) &&
-                        (!endTimestamp || time <= endTimestamp);
-                    return kmMatch && timeMatch;
+                if (!row.km_label || !row.timestamp) return false;
+
+                const kmValue = parseFloat(row.km_label.toString().replace('KM ', ''));
+                if (isNaN(kmValue)) return false;
+
+                const timeValue = new Date(row.timestamp.replace(' ', 'T')).getTime();
+                const kmMatch = kmValue >= kmStart && kmValue <= kmEnd;
+                const timeMatch = (!startTimestamp || timeValue >= startTimestamp) &&
+                                  (!endTimestamp || timeValue <= endTimestamp);
+                return kmMatch && timeMatch;
                 });
 
                 if (filtered.length === 0) {
@@ -528,24 +541,49 @@
                 const vibrations = [];
                 let low = 0, medium = 0, high = 0;
 
+                // filtered.forEach(row => {
+                //     const timeStr = new Date(row.timestamp).toLocaleString();
+                //     const vibration = parseFloat(row.vibration_data);
+                //     const vibrationColor = !isNaN(vibration) && vibration >= 40 ? 'red' : 'limegreen';
+
+                //     const tr = document.createElement('tr');
+                //     tr.innerHTML = `
+                //         <td>${timeStr}</td>
+                //         <td>${row.km_label}</td>
+                //         <td>${row.heading}</td>
+                //         <td>${row.speed}</td>
+                //         <td><span style="color:${vibrationColor}; font-weight:bold;">●</span> ${vibration.toFixed(2)}</td>
+                //     `;
+                //     tbody.appendChild(tr);
+
+                //     labels.push(row.km_label + ' (' + timeStr + ')');
+                //     speeds.push(row.speed);
+                //     vibrations.push(vibration);
                 filtered.forEach(row => {
-                    const timeStr = new Date(row.timestamp).toLocaleString();
-                    const vibration = parseFloat(row.vibration_data);
-                    const vibrationColor = !isNaN(vibration) && vibration >= 40 ? 'red' : 'limegreen';
+                const timeStr = new Date(row.timestamp.replace(' ', 'T')).toLocaleString();
+                const km = row.km_label;
+                const speed = parseFloat(row.speed ?? 0).toFixed(2);
+                const vibration = parseFloat(row.vibration_data ?? 0).toFixed(2);
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${timeStr}</td>
-                        <td>${row.km_label}</td>
-                        <td>${row.heading}</td>
-                        <td>${row.speed}</td>
-                        <td><span style="color:${vibrationColor}; font-weight:bold;">●</span> ${vibration.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(tr);
+                let vibrationColor = 'gray';
+                const vibrationValue = parseFloat(vibration);
+                if (vibrationValue >= 0.7) vibrationColor = 'red';
+                else if (vibrationValue >= 0.4) vibrationColor = 'orange';
+                else vibrationColor = 'limegreen';
 
-                    labels.push(row.km_label + ' (' + timeStr + ')');
-                    speeds.push(row.speed);
-                    vibrations.push(vibration);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${timeStr}</td>
+                    <td>${km}</td>
+                    <td>${row.heading}</td>
+                    <td>${speed}</td>
+                    <td><span style="color:${vibrationColor}; font-weight:bold;">●</span> ${vibration}</td>
+                `;
+                tbody.appendChild(tr);
+
+                labels.push(km);
+                speeds.push(parseFloat(speed));
+                vibrations.push(parseFloat(vibration));
 
                     // Kategorisasi getaran
                     if (!isNaN(vibration)) {
