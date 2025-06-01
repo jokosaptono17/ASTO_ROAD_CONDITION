@@ -520,11 +520,16 @@
                 const filtered = data.filter(row => {
                 if (!row.km_label || !row.timestamp) return false;
 
-                const kmValue = parseFloat(row.km_label.toString().replace('KM ', ''));
+                // const kmValue = parseFloat(row.km_label.toString().replace('KM ', ''));
+                const kmValue = Math.round(parseFloat(row.km_label.toString().replace('KM ', '')) * 100) / 100;
+
                 if (isNaN(kmValue)) return false;
 
                 const timeValue = new Date(row.timestamp.replace(' ', 'T')).getTime();
-                const kmMatch = kmValue >= kmStart && kmValue <= kmEnd;
+                // const kmMatch = kmValue >= kmStart && kmValue <= kmEnd;
+                const kmFloat = parseFloat(kmValue);
+                const kmMatch = kmFloat >= kmStart && kmFloat <= kmEnd;
+
                 const timeMatch = (!startTimestamp || timeValue >= startTimestamp) &&
                                   (!endTimestamp || timeValue <= endTimestamp);
                 return kmMatch && timeMatch;
