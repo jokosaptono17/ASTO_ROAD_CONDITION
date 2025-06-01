@@ -660,79 +660,89 @@
         }
 
         function drawChart(labels, speeds, vibrations) {
-            const ctx = document.getElementById('myChart').getContext('2d');
+    const ctx = document.getElementById('myChart').getContext('2d');
 
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
 
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Kecepatan',
-                            data: speeds,
-                            borderColor: 'blue',
-                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
-                            yAxisID: 'y1',
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Getaran',
-                            data: vibrations,
-                            borderColor: 'red',
-                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                            yAxisID: 'y2',
-                            tension: 0.3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y1: {
-                            type: 'linear',
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Kecepatan'
-                            },
-                            grid: {
-                                color: '#555' // warna abu-abu untuk grid y1
-                            }
-                        },
-                        y2: {
-                            type: 'linear',
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Getaran'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                                color: '#555'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: '#555' // warna abu-abu untuk grid sumbu X
-                            }
-                        }
+    const datasets = [];
+
+    if (document.getElementById('toggleSpeed').checked) {
+        datasets.push({
+            label: 'Kecepatan',
+            data: speeds,
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.3
+        });
+    }
+
+    if (document.getElementById('toggleVibration').checked) {
+        datasets.push({
+            label: 'Getaran',
+            data: vibrations,
+            borderColor: 'red',
+            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+            yAxisID: 'y2',
+            tension: 0.3
+        });
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y1: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Kecepatan'
                     },
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
+                    grid: {
+                        color: '#555'
+                    }
+                },
+                y2: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Getaran'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                        color: '#555'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#555'
                     }
                 }
-            });
-
-            // Pastikan lebarnya proporsional agar tidak terlalu rapat
-            document.getElementById('myChart').style.width = (labels.length * 60) + 'px';
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
         }
+    });
+
+    document.getElementById('myChart').style.width = (labels.length * 60) + 'px';
+    document.getElementById('toggleSpeed').addEventListener('change', () => updateChartPagination());
+    document.getElementById('toggleVibration').addEventListener('change', () => updateChartPagination());
+
+}
+
 
         function updatePieChart(low, medium, high) {
             const ctx = document.getElementById('pieChart').getContext('2d');
